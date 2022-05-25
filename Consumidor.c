@@ -82,7 +82,7 @@ Aviso_read.flag=FlagB2;
 	{
 		
 		msgrcv (Id_Cola_Mensajes, (struct msgbuf *)&Aviso_fill,sizeof(int), 1, 0);
-		if(((Aviso_fill.flag == FlagB1)&&(Aviso_read.flag == FlagB2))||((Aviso_fill.flag != FlagB1) && (Aviso_fill.flag !=FlagB2) && Aviso_fill.flag<tam_medio_buffer))
+		if((Aviso_fill.flag == FlagB1)||((Aviso_fill.flag >= 0) && Aviso_fill.flag<tam_medio_buffer))
 		{
 			
 			for(k=0; k<tam_medio_buffer; k++)
@@ -104,7 +104,7 @@ Aviso_read.flag=FlagB2;
 					Aviso_read.flag=FlagB1;
 				}
 			}
-		else if(((Aviso_fill.flag == FlagB2)&&(Aviso_read.flag == FlagB1))||((Aviso_fill.flag != FlagB1) && (Aviso_fill.flag !=FlagB2) && Aviso_fill.flag>=tam_medio_buffer))
+		else if((Aviso_fill.flag == FlagB2)||((Aviso_fill.flag >= tam_medio_buffer) && Aviso_fill.flag<2*tam_medio_buffer))
 		{
 			
 			for(k=tam_medio_buffer; k<2*tam_medio_buffer; k++)

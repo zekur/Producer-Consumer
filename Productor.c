@@ -42,6 +42,7 @@ struct timeval start;
 struct timeval end;
 
 FILE *Fichero;
+int id=1;
 // Defino las funciones de llenado del buffer
 void Llenar_Buffer_1(memcomp *Memoria) {
   int k = 0;
@@ -52,7 +53,7 @@ void Llenar_Buffer_1(memcomp *Memoria) {
       Aviso_fill.flag = k;
       return;
     }
-    Memoria[k].ID = k;
+    Memoria[k].ID = id++;
     Memoria[k].Tiempo = time_diff(&start, &end);
 
     printf("lleno el buffer 1\n");
@@ -74,7 +75,7 @@ void Llenar_Buffer_2(memcomp *Memoria) {
       Aviso_fill.flag = k;
       return;
     }
-    Memoria[k].ID = k;
+    Memoria[k].ID = id++;
     Memoria[k].Tiempo = time_diff(&start, &end);
 
     printf("lleno el buffer 2\n");
@@ -148,9 +149,9 @@ int main(int argc, char **argv) {
          sizeof(Aviso_fill.flag), 0);
   do {
     msgrcv(Id_Cola_Mensajes, (struct msgbuf *)&Aviso_read, sizeof(int), 2, 0);
-    if ((Aviso_read.flag == FlagB1) && (Aviso_fill.flag == FlagB2)) {
+    if (Aviso_read.flag == FlagB1) {
       Llenar_Buffer_1(Memoria);
-    } else if ((Aviso_read.flag == FlagB2) && (Aviso_fill.flag == FlagB1)) {
+    } else if (Aviso_read.flag == FlagB2) {
       Llenar_Buffer_2(Memoria);
     }
     msgsnd(Id_Cola_Mensajes, (struct msgbuf *)&Aviso_fill,

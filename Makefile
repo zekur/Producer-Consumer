@@ -1,3 +1,8 @@
+com:
+	gcc -o smf sem_multi_threads.c -lpthread
+	./smf datos.dat
+	rm smf
+
 compilePing:
 	gcc -o smf semafobroping.c -lpthread
 	./smf datos.dat

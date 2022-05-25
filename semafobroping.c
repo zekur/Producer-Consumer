@@ -18,8 +18,7 @@ sem_t sem_read_B2;
 sem_t sem_fill_B2;
 struct timeval start;
 struct timeval end;
-
-pthread_mutex_t mutexBuffer;
+int id=1;
 
 typedef struct {
   unsigned int ID;
@@ -39,7 +38,7 @@ void *producer(void *args) {
   while (whileend == -1) {
     sem_wait(&sem_read_B1);
 
-    // Add to the buffer
+    printf("lleno el buffer 1\n");
     for (k = 0; k < tam_medio_buffer; k++) 
     {
       fscanf(Fichero1, "%lf", &Memoria[k].Dato);
@@ -48,10 +47,9 @@ void *producer(void *args) {
         whileend = k;
         break;
       }
-      Memoria[k].ID = k;
+      Memoria[k].ID = id++;
       Memoria[k].Tiempo = time_diff(&start, &end);
 
-      printf("lleno el buffer1\n");
       printf("id=%u,tiempo=%f,dato=%lf\n", Memoria[k].ID, Memoria[k].Tiempo,
              Memoria[k].Dato);
     }
@@ -64,6 +62,7 @@ void *producer(void *args) {
 
     sem_wait(&sem_read_B2);
 
+    printf("lleno el buffer 2\n");
     for (k = tam_medio_buffer; k < 2*tam_medio_buffer; k++)
     {
       fscanf(Fichero1, "%lf", &Memoria[k].Dato);
@@ -72,10 +71,8 @@ void *producer(void *args) {
         whileend = k;
         break;
       }
-      Memoria[k].ID = k;
+      Memoria[k].ID = id++;
       Memoria[k].Tiempo = time_diff(&start, &end);
-
-      printf("lleno el buffer2\n");
       printf("id=%u,tiempo=%f,dato=%lf\n", Memoria[k].ID, Memoria[k].Tiempo,
              Memoria[k].Dato);
     }
@@ -91,16 +88,15 @@ void *consumer(void *args) {
 
     sem_wait(&sem_fill_B1);
 
+    printf("Leyendo buffer 1\n");
     for (i = 0; i < tam_medio_buffer; i++) {
       if (i == whileend) {
         end = 1;
         break;
       }
-      printf("Leyendo buffer1\n");
       fprintf(Fichero2, "%u,%0.6f,%lf\n", Memoria[i].ID, Memoria[i].Tiempo,
               Memoria[i].Dato);
-      printf("id=%u,tiempo=%f,dato=%lf\n", Memoria[i].ID, Memoria[i].Tiempo,
-             Memoria[i].Dato);
+//      printf("id=%u,tiempo=%f,dato=%lf\n", Memoria[i].ID, Memoria[i].Tiempo,Memoria[i].Dato);
     }
 
     sem_post(&sem_read_B1);
@@ -111,16 +107,15 @@ void *consumer(void *args) {
 
     sem_wait(&sem_fill_B2);
 
+    printf("Leyendo buffer 2\n");
     for (i = tam_medio_buffer; i < 2 * tam_medio_buffer; i++) {
       if (i == whileend) {
         end = 1;
         break;
       }
-      printf("Leyendo buffer2\n");
       fprintf(Fichero2, "%u,%0.6f,%lf\n", Memoria[i].ID, Memoria[i].Tiempo,
               Memoria[i].Dato);
-      printf("id=%u,tiempo=%f,dato=%lf\n", Memoria[i].ID, Memoria[i].Tiempo,
-             Memoria[i].Dato);
+//      printf("id=%u,tiempo=%f,dato=%lf\n", Memoria[i].ID, Memoria[i].Tiempo,Memoria[i].Dato);
     }
 
     sem_post(&sem_read_B2);
