@@ -7,7 +7,9 @@
 #include <time.h>
 #include <unistd.h>
 
-#define tam_medio_buffer 4
+#define tam_medio_buffer 7
+
+#define END_WHILE -1
 
 FILE *Fichero1, *Fichero2;
 sem_t sem_read_B1;
@@ -26,19 +28,20 @@ typedef struct {
 } memcomp;
 
 memcomp Memoria[2 * tam_medio_buffer];
-int k = 0, whileend = -1, i = 0;
+int whileend = -1;
 
 float time_diff(struct timeval *start, struct timeval *end) {
   return (end->tv_sec - start->tv_sec) + 1e-6 * (end->tv_usec - start->tv_usec);
 }
 
 void *producer(void *args) {
+  int k;
   while (whileend == -1) {
     sem_wait(&sem_read_B1);
 
     // Add to the buffer
-    k = 0;
-    do {
+    for (k = 0; k < tam_medio_buffer; k++) 
+    {
       fscanf(Fichero1, "%lf", &Memoria[k].Dato);
       gettimeofday(&end, NULL);
       if (feof(Fichero1)) {
@@ -51,9 +54,7 @@ void *producer(void *args) {
       printf("lleno el buffer1\n");
       printf("id=%u,tiempo=%f,dato=%lf\n", Memoria[k].ID, Memoria[k].Tiempo,
              Memoria[k].Dato);
-      k++;
-
-    } while (k < tam_medio_buffer);
+    }
 
     sem_post(&sem_fill_B1);
 
@@ -63,7 +64,8 @@ void *producer(void *args) {
 
     sem_wait(&sem_read_B2);
 
-    do {
+    for (k = tam_medio_buffer; k < 2*tam_medio_buffer; k++)
+    {
       fscanf(Fichero1, "%lf", &Memoria[k].Dato);
       gettimeofday(&end, NULL);
       if (feof(Fichero1)) {
@@ -76,9 +78,7 @@ void *producer(void *args) {
       printf("lleno el buffer2\n");
       printf("id=%u,tiempo=%f,dato=%lf\n", Memoria[k].ID, Memoria[k].Tiempo,
              Memoria[k].Dato);
-      k++;
-
-    } while (k < 2 * tam_medio_buffer);
+    }
 
     sem_post(&sem_fill_B2);
   }
@@ -86,7 +86,7 @@ void *producer(void *args) {
 }
 
 void *consumer(void *args) {
-  int end = 0;
+  int end = 0,i;
   while (end == 0) {
 
     sem_wait(&sem_fill_B1);
@@ -148,12 +148,14 @@ int main(int argc, char *argv[]) {
   sem_init(&sem_read_B2, 0, 1);
   sem_init(&sem_fill_B2, 0, 0);
 
+
   if (pthread_create(&th[0], NULL, &producer, NULL) != 0) {
     printf("Failed to create thread");
   }
   if (pthread_create(&th[1], NULL, &consumer, NULL) != 0) {
     printf("Failed to create thread");
   }
+
 
   if (pthread_join(th[0], NULL) != 0) {
     printf("Failed to join thread");
