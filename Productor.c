@@ -158,6 +158,7 @@ int main(int argc, char **argv) {
            sizeof(Aviso_fill.flag), 0);
   } while (Aviso_read.flag != FlagEOF);
 
+printf("Se terminaron de producir los datos con éxito.\n");
   shmdt((const void *)Memoria);
 
   shmctl(Id_Memoria, IPC_RMID, (struct shmid_ds *)NULL);
