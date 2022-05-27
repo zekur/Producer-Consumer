@@ -27,7 +27,7 @@ typedef struct {
 } memcomp;
 
 memcomp Memoria[2 * tam_medio_buffer];
-int whileend = -1;
+int k_final=-1;
 
 float time_diff(struct timeval *start, struct timeval *end) {
   return (end->tv_sec - start->tv_sec) + 1e-6 * (end->tv_usec - start->tv_usec);
@@ -35,7 +35,7 @@ float time_diff(struct timeval *start, struct timeval *end) {
 
 void *producer(void *args) {
   int k;
-  while (whileend == -1) {
+  while (!feof(Fichero1)) {
     sem_wait(&sem_read_B1);
 
     printf("lleno el buffer 1\n");
@@ -44,7 +44,7 @@ void *producer(void *args) {
       fscanf(Fichero1, "%lf", &Memoria[k].Dato);
       gettimeofday(&end, NULL);
       if (feof(Fichero1)) {
-        whileend = k;
+        k_final = k;
         break;
       }
       Memoria[k].ID = id++;
@@ -56,7 +56,7 @@ void *producer(void *args) {
 
     sem_post(&sem_fill_B1);
 
-    if (whileend != -1) {
+    if (feof(Fichero1)) {
       break;
     }
 
@@ -68,7 +68,7 @@ void *producer(void *args) {
       fscanf(Fichero1, "%lf", &Memoria[k].Dato);
       gettimeofday(&end, NULL);
       if (feof(Fichero1)) {
-        whileend = k;
+        k_final = k;
         break;
       }
       Memoria[k].ID = id++;
@@ -83,15 +83,15 @@ void *producer(void *args) {
 }
 
 void *consumer(void *args) {
-  int end = 0,i;
-  while (end == 0) {
+  int end_reading = 0,i;
+  while (end_reading == 0) {
 
     sem_wait(&sem_fill_B1);
 
     printf("Leyendo buffer 1\n");
     for (i = 0; i < tam_medio_buffer; i++) {
-      if (i == whileend) {
-        end = 1;
+      if (i == k_final) {
+        end_reading = 1;
         break;
       }
       fprintf(Fichero2, "%u,%0.6f,%lf\n", Memoria[i].ID, Memoria[i].Tiempo,
@@ -101,7 +101,7 @@ void *consumer(void *args) {
 
     sem_post(&sem_read_B1);
 
-    if (end == 1) {
+    if (end_reading == 1) {
       break;
     }
 
@@ -109,8 +109,8 @@ void *consumer(void *args) {
 
     printf("Leyendo buffer 2\n");
     for (i = tam_medio_buffer; i < 2 * tam_medio_buffer; i++) {
-      if (i == whileend) {
-        end = 1;
+      if (i == k_final) {
+        end_reading = 1;
         break;
       }
       fprintf(Fichero2, "%u,%0.6f,%lf\n", Memoria[i].ID, Memoria[i].Tiempo,
@@ -138,25 +138,36 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  sem_init(&sem_read_B1, 0, 1);
-  sem_init(&sem_fill_B1, 0, 0);
-  sem_init(&sem_read_B2, 0, 1);
-  sem_init(&sem_fill_B2, 0, 0);
-
+  if(sem_init(&sem_read_B1, 0, 1)==-1)
+  {
+    printf("error en la creacion del semaforo\n");
+  }
+  if(sem_init(&sem_fill_B1, 0, 0)==-1)
+  {
+    printf("error en la creacion del semaforo\n");
+  }
+  if(sem_init(&sem_read_B2, 0, 1)==-1)
+  {
+    printf("error en la creacion del semaforo\n");
+  }
+  if(sem_init(&sem_fill_B2, 0, 0)==-1)
+  {
+    printf("error en la creacion del semaforo\n");
+  }
 
   if (pthread_create(&th[0], NULL, &producer, NULL) != 0) {
-    printf("Failed to create thread");
+    printf("Error en la creacion del hilo");
   }
   if (pthread_create(&th[1], NULL, &consumer, NULL) != 0) {
-    printf("Failed to create thread");
+    printf("Error en la creacion del hilo");
   }
 
 
   if (pthread_join(th[0], NULL) != 0) {
-    printf("Failed to join thread");
+    printf("Error al unir el hilo");
   }
   if (pthread_join(th[1], NULL) != 0) {
-    printf("Failed to join thread");
+    printf("Error al unir el hilo");
   }
 
   sem_destroy(&sem_read_B1);
